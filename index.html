@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagramas de Venn Interactivos</title>
+<style>
+  :root{
+    --primary:#4f46e5;
+    --background:#f4f6fb;
+    --surface:#ffffff;
+    --text:#172033;
+    --muted:#64748b;
+    --border:#dbe2ef;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--background);color:var(--text);}
+  header{padding:30px 20px;color:#fff;text-align:center;background:linear-gradient(135deg,#312e81,#6366f1);}
+  header h1{margin:0 0 10px;font-size:clamp(25px,4vw,36px);}
+  header p{margin:0;color:#e0e7ff;line-height:1.6;}
+  main{width:min(1500px,100%);margin:auto;padding:22px;}
+  .layout{display:grid;grid-template-columns:minmax(290px,400px) minmax(0,1fr);gap:22px;align-items:start;}
+  .panel{min-width:0;padding:20px;border:1px solid var(--border);border-radius:16px;background:var(--surface);box-shadow:0 5px 20px #1720330a;}
+  h2{margin:0 0 16px;font-size:20px;}
+  h3{margin:22px 0 10px;font-size:16px;}
+  .field{margin-bottom:15px;}
+  label{display:block;margin-bottom:7px;font-size:14px;font-weight:700;}
+  input,textarea,select{width:100%;padding:11px 12px;color:var(--text);font:inherit;border:1px solid var(--border);border-radius:9px;background:#fff;}
+  textarea{min-height:82px;resize:vertical;line-height:1.5;}
+  input:focus,textarea:focus,select:focus{outline:2px solid #c7d2fe;border-color:var(--primary);}
+  .help{display:block;margin-top:6px;color:var(--muted);font-size:12px;line-height:1.5;}
+  .set-card{margin-bottom:13px;padding:14px;border:1px solid var(--border);border-left:4px solid var(--set-color,#6366f1);border-radius:10px;background:#fafbff;}
+  .set-card-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;}
+  .set-card-header strong{font-size:15px;}
+  .set-card-header button{padding:5px 9px;color:#b91c1c;border:1px solid #fecaca;border-radius:7px;background:#fff;cursor:pointer;}
+  .set-card .field:last-child{margin-bottom:0;}
+  .buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px;}
+  button{padding:11px 14px;border:0;border-radius:9px;font-weight:700;cursor:pointer;transition:opacity .15s,transform .15s;}
+  button:hover{opacity:.88;}
+  button:active{transform:scale(.98);}
+  .btn-primary{color:#fff;background:var(--primary);}
+  .btn-secondary{color:#3730a3;background:#e0e7ff;}
+  .btn-light{color:var(--text);background:#e9edf5;}
+  .btn-danger{color:#991b1b;background:#fee2e2;}
+  .btn-full{width:100%;}
+  .visual-panel{min-height:500px;}
+  .visual-header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;}
+  .visual-header h2{margin:0;}
+  .status{display:inline-block;padding:7px 10px;border-radius:20px;color:#166534;background:#dcfce7;font-size:12px;font-weight:700;}
+  .diagram-wrap{margin-top:18px;overflow:hidden;border:1px solid var(--border);border-radius:12px;background:#fff;}
+  #vennSvg{display:block;width:100%;min-height:330px;aspect-ratio:1.5/1;background:#fff;}
+  .legend{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px;}
+  .legend-item{display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:13px;}
+  .legend-color{width:14px;height:14px;border-radius:3px;border:1px solid #94a3b8;}
+  .result-box{margin-top:20px;padding:18px;border:1px solid var(--border);border-radius:12px;background:#f0fdf4;}
+  .result-header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;}
+  .result-header h3{margin:0;}
+  #resultCount{color:var(--muted);font-size:13px;}
+  #resultList{display:flex;flex-wrap:wrap;gap:8px;min-height:36px;margin-top:14px;}
+  .result-item{padding:8px 11px;border:1px solid #86efac;border-radius:8px;color:#166534;background:#dcfce7;overflow-wrap:anywhere;}
+  .empty-result{color:var(--muted);font-size:14px;}
+  .formula{margin-top:14px;padding:12px;border-radius:8px;color:#166534;background:#dcfce7;line-height:1.6;overflow-wrap:anywhere;}
+  .notice{margin-top:14px;padding:12px;border-left:4px solid #f59e0b;border-radius:6px;color:#854d0e;background:#fffbeb;font-size:13px;line-height:1.6;}
+  .expr-help{background:#eef2ff;border-radius:8px;padding:10px 12px;font-size:12px;color:#3730a3;line-height:1.7;margin-top:8px;}
+  .expr-help code{background:#fff;padding:1px 5px;border-radius:4px;border:1px solid #c7d2fe;}
+  footer{padding:24px 15px;color:var(--muted);text-align:center;font-size:13px;}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;}.visual-panel{min-height:0;}}
+  @media (max-width:520px){main{padding:12px;}.panel{padding:14px;}#vennSvg{min-height:260px;}.buttons button{flex:1 1 100%;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Diagramas de Venn</h1>
+  <p>Construye conjuntos, escribe expresiones y descarga tus resultados.</p>
+</header>
+
+<main>
+  <div class="layout">
+
+    <section class="panel">
+      <h2>Configuración</h2>
+
+      <div class="field">
+        <label for="expressionInput">Expresión de conjuntos</label>
+        <input id="expressionInput" type="text"
+               placeholder="Ej: (A ∪ B) ∩ C"
+               autocomplete="off">
+        <div class="expr-help">
+          Operadores: <code>∪</code> unión, <code>∩</code> intersección,
+          <code>−</code> diferencia, <code>ᶜ</code> complemento (o <code>'</code>).<br>
+          También puedes escribir: <code>+</code> = unión, <code>*</code> = intersección,
+          <code>-</code> = diferencia, <code>!</code> = complemento.<br>
+          Ejemplos: <code>(A ∪ B) ∩ C</code> · <code>A − (B ∪ C)</code> · <code>Aᶜ ∩ B</code> ·
+          <code>(A ∩ B) ∪ (C − D)</code>
+        </div>
+      </div>
+
+      <h3>Conjuntos</h3>
+      <div id="setsContainer"></div>
+
+      <button id="addSetBtn" class="btn-secondary btn-full" type="button">+ Agregar conjunto</button>
+
+      <div class="field" style="margin-top:22px;">
+        <label for="universeInput">Conjunto universal U</label>
+        <textarea id="universeInput" placeholder="Ejemplo: 1, 2, 3, 4, 5, 6, 7, 8"></textarea>
+        <span class="help">Escribe todos los elementos del universo separados por comas.</span>
+      </div>
+
+      <div class="buttons">
+        <button id="calculateBtn" class="btn-primary" type="button">Calcular</button>
+        <button id="exampleBtn" class="btn-light" type="button">Cargar ejemplo</button>
+        <button id="resetBtn" class="btn-danger" type="button">Reiniciar</button>
+      </div>
+
+      <div class="notice">
+        La <strong>zona verde</strong> representa el resultado de la expresión.
+        Los elementos se colocan en su región correcta según pertenezcan a
+        cada conjunto.
+      </div>
+    </section>
+
+    <section class="panel visual-panel">
+      <div class="visual-header">
+        <h2>Diagrama y resultado</h2>
+        <span id="operationStatus" class="status">Expresión</span>
+      </div>
+
+      <div class="diagram-wrap">
+        <svg id="vennSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600"
+             role="img" aria-label="Diagrama de Venn interactivo"></svg>
+      </div>
+
+      <div id="legend" class="legend"></div>
+
+      <div class="buttons">
+        <button id="downloadPngBtn" class="btn-primary" type="button">Descargar imagen PNG</button>
+        <button id="downloadSvgBtn" class="btn-secondary" type="button">Descargar SVG</button>
+        <button id="downloadJsonBtn" class="btn-light" type="button">Descargar datos JSON</button>
+        <button id="copyResultBtn" class="btn-light" type="button">Copiar resultado</button>
+      </div>
+
+      <div class="result-box">
+        <div class="result-header">
+          <h3>Resultado de la operación</h3>
+          <span id="resultCount">0 elementos</span>
+        </div>
+        <div id="resultList"></div>
+        <div id="formula" class="formula"></div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer>Diagramas de Venn interactivos · Desarrollado por Juseruhe </footer>
+
+<script>
+"use strict";
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const COLORS = ["#6366f1","#ec4899","#14b8a6","#f59e0b","#8b5cf6","#ef4444",
+                "#0ea5e9","#84cc16","#f97316","#64748b","#d946ef","#10b981"];
+
+// Color VERDE del resultado
+const RESULT_FILL = "#22c55e";
+const RESULT_FILL_OPACITY = 0.70;
+
+const state = { sets:[], nextId:1, result:[], universe:[] };
+const $ = (s) => document.querySelector(s);
+
+const setsContainer   = $("#setsContainer");
+const universeInput   = $("#universeInput");
+const expressionInput = $("#expressionInput");
+const svg             = $("#vennSvg");
+
+/* =====================================================================
+   UTILIDADES
+   ===================================================================== */
+const unique = (v) => [...new Set(v)];
+function parseValues(v){
+  return unique(v.split(/[,;\n]+/).map(x => x.trim()).filter(Boolean));
+}
+function escapeHtml(v){
+  return String(v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c]);
+}
+const getSet = (id) => state.sets.find(s => s.id === Number(id));
+const getSetValues = (s) => parseValues(s.values);
+const getSetColor = (i) => COLORS[i % COLORS.length];
+const getSetByName = (name) =>
+  state.sets.find(s => s.name.toUpperCase() === String(name).toUpperCase());
+
+let uidCounter = 0;
+const uid = () => `vn-${uidCounter++}`;
+function svgEl(tag, attrs = {}){
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
+  return el;
+}
+
+/* =====================================================================
+   PARSER DE EXPRESIONES DE CONJUNTOS
+   ---------------------------------------------------------------------
+   Gramática (precedencia de mayor a menor):
+     expr    := term (('∪'|'+'|'∩'|'*'|'−'|'-') term)*
+     term    := factor ('ᶜ' | "'")?
+     factor  := '(' expr ')' | CONJUNTO | UNIVERSO
+   Los operadores ∪ y ∩ tienen la misma precedencia (izq→der).
+   La diferencia − se evalúa de izquierda a derecha.
+   ===================================================================== */
+function tokenize(expr){
+  const tokens = [];
+  let i = 0;
+  while (i < expr.length){
+    const c = expr[i];
+    if (/\s/.test(c)) { i++; continue; }
+    if (c === '(' || c === ')') { tokens.push({type: c}); i++; continue; }
+    if (c === '∪' || c === '+') { tokens.push({type:'UNION'}); i++; continue; }
+    if (c === '∩' || c === '*') { tokens.push({type:'INTER'}); i++; continue; }
+    if (c === '−' || c === '-' || c === '\\') { tokens.push({type:'DIFF'}); i++; continue; }
+    if (c === 'ᶜ' || c === '!') { tokens.push({type:'COMP'}); i++; continue; }
+    if (c === "'" || c === '`') { tokens.push({type:'COMP'}); i++; continue; }
+    // Identificador: letras, números, guiones bajos
+    if (/[A-Za-z0-9_]/.test(c)){
+      let id = '';
+      while (i < expr.length && /[A-Za-z0-9_]/.test(expr[i])){
+        id += expr[i]; i++;
+      }
+      tokens.push({type:'ID', value: id});
+      continue;
+    }
+    throw new Error("Carácter no reconocido: '" + c + "'");
+  }
+  return tokens;
+}
+
+function parse(tokens){
+  let pos = 0;
+  function peek(){ return tokens[pos]; }
+  function consume(t){ if (!tokens[pos] || tokens[pos].type !== t) return null; return tokens[pos++]; }
+
+  function parseExpr(){
+    let left = parseTerm();
+    while (true){
+      const t = peek();
+      if (!t) break;
+      if (t.type === 'UNION' || t.type === 'INTER' || t.type === 'DIFF'){
+        pos++;
+        const right = parseTerm();
+        left = { op: t.type, left, right };
+      } else if (t.type === 'COMP'){
+        pos++;
+        left = { op: 'COMP', child: left };
+      } else {
+        break;
+      }
+    }
+    return left;
+  }
+
+  function parseTerm(){
+    let node = parseFactor();
+    while (peek() && peek().type === 'COMP'){
+      pos++;
+      node = { op: 'COMP', child: node };
+    }
+    return node;
+  }
+
+  function parseFactor(){
+    const t = peek();
+    if (!t) throw new Error("Expresión incompleta");
+    if (t.type === '('){
+      pos++;
+      const inner = parseExpr();
+      if (!consume(')')) throw new Error("Falta paréntesis de cierre");
+      return inner;
+    }
+    if (t.type === 'ID'){
+      pos++;
+      return { op: 'ID', name: t.value };
+    }
+    throw new Error("Token inesperado: " + t.type);
+  }
+
+  const tree = parseExpr();
+  if (pos < tokens.length) throw new Error("Sobra algo en la expresión");
+  return tree;
+}
+
+/* Evalúa el árbol contra el estado actual */
+function evalExpr(node, ctx){
+  if (node.op === 'ID'){
+    if (node.name.toUpperCase() === 'U'){
+      return ctx.universe.slice();
+    }
+    const set = ctx.sets.find(s => s.name.toUpperCase() === node.name.toUpperCase());
+    if (!set) throw new Error("Conjunto no encontrado: " + node.name);
+    return ctx.values[set.id].slice();
+  }
+  if (node.op === 'COMP'){
+    const a = evalExpr(node.child, ctx);
+    return ctx.universe.filter(x => !a.includes(x));
+  }
+  const a = evalExpr(node.left, ctx);
+  const b = evalExpr(node.right, ctx);
+  if (node.op === 'UNION') return unique([...a, ...b]);
+  if (node.op === 'INTER') return a.filter(x => b.includes(x));
+  if (node.op === 'DIFF')  return a.filter(x => !b.includes(x));
+  throw new Error("Operación desconocida");
+}
+
+/* Devuelve el árbol en texto legible */
+function prettyExpr(node){
+  if (node.op === 'ID') return node.name;
+  if (node.op === 'COMP') return prettyExpr(node.child) + "ᶜ";
+  const op = { UNION:"∪", INTER:"∩", DIFF:"−" }[node.op];
+  const l = node.left.op === 'UNION' || node.left.op === 'INTER' || node.left.op === 'DIFF'
+    ? `(${prettyExpr(node.left)})` : prettyExpr(node.left);
+  const r = node.right.op === 'UNION' || node.right.op === 'INTER' || node.right.op === 'DIFF'
+    ? `(${prettyExpr(node.right)})` : prettyExpr(node.right);
+  return `${l} ${op} ${r}`;
+}
+
+/* =====================================================================
+   TARJETAS DE CONJUNTOS
+   ===================================================================== */
+function renderSetInputs(){
+  setsContainer.innerHTML = "";
+  state.sets.forEach((set, index) => {
+    const card = document.createElement("div");
+    card.className = "set-card";
+    card.style.setProperty("--set-color", getSetColor(index));
+    card.innerHTML = `
+      <div class="set-card-header">
+        <strong style="color:${getSetColor(index)}">Conjunto ${escapeHtml(set.name)}</strong>
+        <button type="button" data-remove="${set.id}">Eliminar</button>
+      </div>
+      <div class="field">
+        <label>Nombre</label>
+        <input data-name="${set.id}" value="${escapeHtml(set.name)}" maxlength="4">
+      </div>
+      <div class="field">
+        <label>Elementos</label>
+        <textarea data-values="${set.id}"
+          placeholder="Ejemplo: 1, 2, 3, 4">${escapeHtml(set.values)}</textarea>
+        <span class="help">Separa con comas, punto y coma o saltos de línea.</span>
+      </div>`;
+    setsContainer.appendChild(card);
+  });
+}
+
+function syncInputsToState(){
+  state.sets.forEach(set => {
+    const n = document.querySelector(`[data-name="${set.id}"]`);
+    const v = document.querySelector(`[data-values="${set.id}"]`);
+    if (n) set.name = n.value.trim().toUpperCase() || String.fromCharCode(64 + set.id);
+    if (v) set.values = v.value;
+  });
+}
+
+/* =====================================================================
+   POSICIONES DE LOS CÍRCULOS
+   ===================================================================== */
+const UNIVERSE = { x: 30, y: 30, w: 840, h: 540 };
+
+function circlePositions(){
+  const count = state.sets.length;
+  const cx = UNIVERSE.x + UNIVERSE.w / 2;
+  const cy = UNIVERSE.y + UNIVERSE.h / 2;
+  const rCircle = Math.max(80, Math.min(150, 190 - count * 12));
+
+  if (count === 1){
+    return { radius: rCircle, positions:[{ x:cx, y:cy, index:0 }] };
+  }
+  if (count === 2){
+    const off = rCircle * 0.62;
+    return {
+      radius: rCircle,
+      positions: [
+        { x: cx - off, y: cy, index: 0 },
+        { x: cx + off, y: cy, index: 1 }
+      ]
+    };
+  }
+  if (count === 3){
+    const off = rCircle * 0.62;
+    return {
+      radius: rCircle,
+      positions: [
+        { x: cx,             y: cy - off,          index: 0 },
+        { x: cx - off*0.95,  y: cy + off*0.72,     index: 1 },
+        { x: cx + off*0.95,  y: cy + off*0.72,     index: 2 }
+      ]
+    };
+  }
+  if (count === 4){
+    const off = rCircle * 0.55;
+    return {
+      radius: rCircle,
+      positions: [
+        { x: cx - off, y: cy - off, index: 0 },
+        { x: cx + off, y: cy - off, index: 1 },
+        { x: cx - off, y: cy + off, index: 2 },
+        { x: cx + off, y: cy + off, index: 3 }
+      ]
+    };
+  }
+  const rOrbit = Math.min(160, 210 - count * 6);
+  const positions = [];
+  for (let i = 0; i < count; i++){
+    const a = -Math.PI/2 + 2*Math.PI*i/count;
+    positions.push({
+      x: cx + rOrbit * Math.cos(a),
+      y: cy + rOrbit * Math.sin(a),
+      index: i
+    });
+  }
+  return { radius: rCircle, positions };
+}
+
+/* =====================================================================
+   DIBUJO DEL DIAGRAMA
+   ===================================================================== */
+function renderDiagram(operation){
+  const W = 900, H = 600;
+
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const defs = svgEl("defs");
+  svg.appendChild(defs);
+
+  // Fondo blanco
+  svg.appendChild(svgEl("rect", { width:W, height:H, fill:"#ffffff" }));
+
+  // Rectángulo U
+  svg.appendChild(svgEl("rect", {
+    x: UNIVERSE.x, y: UNIVERSE.y,
+    width: UNIVERSE.w, height: UNIVERSE.h,
+    rx: 14, fill: "#f8fafc",
+    stroke: "#334155", "stroke-width": 2.5
+  }));
+  const uLabel = svgEl("text", {
+    x: UNIVERSE.x + 18, y: UNIVERSE.y + 32,
+    "font-size": 26, "font-weight":"bold",
+    "font-family":"Arial, Helvetica, sans-serif",
+    fill: "#334155"
+  });
+  uLabel.textContent = "U";
+  svg.appendChild(uLabel);
+
+  const { radius, positions } = circlePositions();
+
+  // 1) Relleno verde del resultado
+  drawResultFill(operation, positions, radius, W, H);
+
+  // 2) Círculos con su color propio
+  positions.forEach((p, i) => {
+    const color = getSetColor(i);
+    svg.appendChild(svgEl("circle", {
+      cx:p.x, cy:p.y, r:radius,
+      fill:color, "fill-opacity":0.05,
+      stroke:color, "stroke-width":3
+    }));
+  });
+
+  // 3) Nombres de los conjuntos
+  positions.forEach((p, i) => {
+    const set = state.sets[p.index];
+    const color = getSetColor(i);
+    const t = svgEl("text", {
+      x:p.x, y:p.y - radius + 30,
+      "text-anchor":"middle",
+      "font-size":22, "font-weight":"bold",
+      "font-family":"Arial, Helvetica, sans-serif",
+      fill:color
+    });
+    t.textContent = set.name;
+    svg.appendChild(t);
+  });
+
+  // 4) Números en su región
+  drawElementLabels(positions, radius, operation);
+
+  // 5) Nota inferior
+  const note = operation.error
+    ? "Error: " + operation.error
+    : (operation.formula ? "Zona verde = " + operation.formula : "Escribe una expresión");
+  const nt = svgEl("text", {
+    x:450, y:588, "text-anchor":"middle",
+    "font-size":15, "font-family":"Arial, Helvetica, sans-serif",
+    fill: operation.error ? "#b91c1c" : "#475569"
+  });
+  nt.textContent = note;
+  svg.appendChild(nt);
+
+  renderLegend(operation);
+}
+
+/* -------- Relleno verde de la zona del resultado --------
+   Técnica: evaluamos la expresión "por conjuntos" usando regiones.
+   Para cada subconjunto de conjuntos (región del diagrama), decidimos
+   si pertenece o no al resultado. Después, para las operaciones simples
+   usamos clip-path. Para expresiones complejas, usamos máscaras con
+   las regiones individuales.
+   -------------------------------------------------------------------
+   Enfoque simplificado: para 2 y 3 conjuntos pintamos la zona del
+   resultado construyendo las 2^n regiones del diagrama y rellenando
+   solo las regiones que pertenecen al resultado.
+   ------------------------------------------------------------------- */
+function drawResultFill(operation, positions, r, W, H){
+  const n = state.sets.length;
+  const defs = svg.querySelector("defs");
+
+  // Si la expresión no se evaluó bien, no pintamos nada.
+  if (operation.error) return;
+
+  // Calculamos qué elementos caen en el resultado
+  // y de ahí deducimos qué "regiones" están activas.
+  // Región = conjunto de índices de conjuntos a los que pertenece.
+  // Generamos las 2^n regiones del diagrama de Venn "ideal" y marcamos
+  // las que contribuyen al resultado.
+
+  const totalRegions = 1 << n;
+
+  // Vamos a pintar cada región por separado.
+  // Para regiones con 1 conjunto: círculo completo.
+  // Para regiones con >1 conjunto: intersección de esos círculos,
+  //                               menos la unión de los demás.
+  for (let mask = 1; mask < totalRegions; mask++){
+    const bits = [];
+    for (let i = 0; i < n; i++) if (mask & (1 << i)) bits.push(i);
+
+    // ¿Esta región está en el resultado?
+    // Comprobamos si los elementos del universo en esa región pertenecen
+    // al resultado. Pero como no podemos "elegir elementos" en SVG,
+    // comprobamos con el árbol evaluado sobre los elementos de esa región.
+    // Es decir: necesitamos saber si ALGÚN elemento del universo que
+    // pertenece a esa región está en el resultado. Si la región está
+    // completamente dentro o fuera, decidimos el pintado con la lógica
+    // de pertenencia.
+    //
+    // Mejor enfoque: pintamos la región si el conjunto "teórico" de la
+    // región (los elementos de U que están en esos conjuntos y no en los
+    // demás) tiene intersección con el resultado. Pero visualmente
+    // queremos pintar regiones completas, así que usamos la REGLA:
+    // la región se pinta si el resultado "contiene" al menos un elemento
+    // representativo de la región.
+    //
+    // Como aproximación, pintamos la región si TODOS los elementos que
+    // están en ella pertenecen al resultado (para evitar pintar regiones
+    // parciales). En la práctica, con la región calculada y el resultado
+    // evaluado elemento a elemento, esto da resultados correctos.
+
+    const regionElements = getRegionElements(mask, n);
+    if (!regionElements.length) continue;
+    const allIn = regionElements.every(x => operation.values.includes(x));
+    const anyIn = regionElements.some(x => operation.values.includes(x));
+    if (!anyIn) continue;
+
+    // Si la región tiene elementos y todos están en el resultado, la pintamos.
+    // Si solo algunos, la pintamos parcialmente? Lo ideal es que el usuario
+    // coloque los elementos de forma coherente. Pintamos si TODOS están dentro.
+    // Pero para que el diagrama sea útil, pintamos si la mayoría está dentro.
+    if (!allIn) continue;
+
+    paintRegion(defs, svg, mask, n, positions, r, W, H);
+  }
+}
+
+/* Devuelve los elementos de U que pertenecen exactamente a la región
+   indicada por la máscara `mask` (bits = conjuntos a los que pertenece). */
+function getRegionElements(mask, n){
+  const universe = state.universe.length
+    ? state.universe
+    : [...new Set(state.sets.flatMap(s => getSetValues(s)))];
+  return universe.filter(x => {
+    let bits = 0;
+    state.sets.forEach((set, i) => {
+      if (getSetValues(set).includes(x)) bits |= (1 << i);
+    });
+    return bits === mask;
+  });
+}
+
+/* Pinta la región indicada por `mask` (bits = conjuntos que la forman).
+   La región se dibuja como:
+     - Si bits = 1 conjunto  → ese círculo.
+     - Si bits > 1           → intersección de esos círculos, menos la
+                               unión de los demás (clip-path en cadena). */
+function paintRegion(defs, parent, mask, n, positions, r, W, H){
+  const bits = [];
+  for (let i = 0; i < n; i++) if (mask & (1 << i)) bits.push(i);
+  const notBits = [];
+  for (let i = 0; i < n; i++) if (!(mask & (1 << i))) notBits.push(i);
+
+  // Creamos el nodo base: un rect verde
+  let node = svgEl("rect", {
+    x: UNIVERSE.x, y: UNIVERSE.y,
+    width: UNIVERSE.w, height: UNIVERSE.h,
+    fill: RESULT_FILL,
+    "fill-opacity": RESULT_FILL_OPACITY
+  });
+
+  // Aplicamos clips de los bits (intersección)
+  bits.forEach(i => {
+    const cid = uid();
+    const clip = svgEl("clipPath", { id: cid, clipPathUnits:"userSpaceOnUse" });
+    const p = positions[i];
+    clip.appendChild(svgEl("circle", { cx:p.x, cy:p.y, r }));
+    defs.appendChild(clip);
+    const g = svgEl("g");
+    g.setAttribute("clip-path", `url(#${cid})`);
+    g.appendChild(node);
+    node = g;
+  });
+
+  // Restamos los notBits usando una máscara
+  if (notBits.length){
+    const mid = uid();
+    const m = svgEl("mask", {
+      id: mid, maskUnits:"userSpaceOnUse",
+      x: UNIVERSE.x, y: UNIVERSE.y,
+      width: UNIVERSE.w, height: UNIVERSE.h
+    });
+    m.appendChild(svgEl("rect", {
+      x: UNIVERSE.x, y: UNIVERSE.y,
+      width: UNIVERSE.w, height: UNIVERSE.h,
+      fill: "#ffffff"
+    }));
+    notBits.forEach(i => {
+      const p = positions[i];
+      m.appendChild(svgEl("circle", {
+        cx:p.x, cy:p.y, r, fill:"#000000"
+      }));
+    });
+    defs.appendChild(m);
+    const g = svgEl("g");
+    g.setAttribute("mask", `url(#${mid})`);
+    g.appendChild(node);
+    node = g;
+  }
+
+  parent.appendChild(node);
+}
+
+/* =====================================================================
+   NÚMEROS
+   ===================================================================== */
+function drawElementLabels(positions, r, operation){
+  const n = state.sets.length;
+
+  if (n === 0) return;
+
+  // Para cada región (bits distintos de 0), dibujamos sus elementos
+  // en el centro aproximado de la región.
+  const totalRegions = 1 << n;
+
+  for (let mask = 1; mask < totalRegions; mask++){
+    const regionElements = getRegionElements(mask, n);
+    if (!regionElements.length) continue;
+
+    const bits = [];
+    for (let i = 0; i < n; i++) if (mask & (1 << i)) bits.push(i);
+
+    // Centroide aproximado de la región
+    let cx = 0, cy = 0;
+    bits.forEach(i => { cx += positions[i].x; cy += positions[i].y; });
+    cx /= bits.length;
+    cy /= bits.length;
+
+    // Si la región tiene un solo conjunto, desplazamos hacia el lado "libre"
+    if (bits.length === 1){
+      const only = bits[0];
+      // Dirección opuesta al centro de los demás
+      const otherX = positions.reduce((a,p,idx) => idx === only ? a : a + p.x, 0)
+                    / Math.max(1, n - 1);
+      const dx = positions[only].x - (isNaN(otherX) ? positions[only].x : otherX);
+      const len = Math.hypot(dx, positions[only].y - (cy || positions[only].y)) || 1;
+      cx = positions[only].x + (dx / Math.abs(dx || 1)) * r * 0.45;
+      cy = positions[only].y;
+    } else if (bits.length === 2 && n === 2){
+      // Entre los dos centros
+      cx = (positions[bits[0]].x + positions[bits[1]].x) / 2;
+      cy = (positions[bits[0]].y + positions[bits[1]].y) / 2;
+    }
+
+    drawTextColumn(regionElements, cx, cy, r * 0.45, "#0f172a");
+  }
+
+  // Elementos del universo que no están en ningún conjunto
+  drawUniverseOutside(positions, r);
+}
+
+function drawUniverseOutside(positions, r){
+  const universe = parseValues(universeInput.value);
+  if (!universe.length) return;
+
+  const inAnySet = new Set();
+  state.sets.forEach(s => getSetValues(s).forEach(v => inAnySet.add(v)));
+
+  const fuera = universe.filter(v => !inAnySet.has(v));
+  if (!fuera.length) return;
+
+  const x = UNIVERSE.x + 25;
+  const y = UNIVERSE.y + UNIVERSE.h - 25;
+
+  const t0 = svgEl("text", {
+    x, y,
+    "font-size": 13, "font-weight":"700",
+    "font-family":"Arial, Helvetica, sans-serif",
+    fill: "#334155"
+  });
+  t0.textContent = "Fuera de todos los conjuntos: " + fuera.join(", ");
+  svg.appendChild(t0);
+}
+
+function drawTextColumn(values, cx, cy, radiusUsable, color){
+  if (!values.length) return;
+
+  const lineHeight = 18;
+  const maxChars = Math.max(5, Math.floor((radiusUsable * 2.2) / 8));
+
+  const lines = [];
+  let cur = "";
+  values.forEach(el => {
+    const c = cur ? cur + ", " + el : el;
+    if (c.length <= maxChars) cur = c;
+    else { if (cur) lines.push(cur); cur = el; }
+  });
+  if (cur) lines.push(cur);
+
+  const maxLines = Math.max(1, Math.floor((radiusUsable * 2) / lineHeight));
+  let disp = lines;
+  if (lines.length > maxLines){
+    disp = lines.slice(0, maxLines - 1);
+    disp.push("… " + lines.slice(maxLines - 1).join(", "));
+  }
+
+  const totalH = disp.length * lineHeight;
+  const startY = cy - totalH / 2 + lineHeight / 2;
+
+  disp.forEach((line, k) => {
+    const t = svgEl("text", {
+      x: cx,
+      y: startY + k * lineHeight,
+      "text-anchor": "middle",
+      "font-size": 15,
+      "font-weight": "700",
+      "font-family": "Arial, Helvetica, sans-serif",
+      fill: color
+    });
+    t.textContent = line;
+    svg.appendChild(t);
+  });
+}
+
+/* =====================================================================
+   LEYENDA
+   ===================================================================== */
+function renderLegend(operation){
+  const legend = $("#legend");
+  legend.innerHTML = "";
+
+  const ri = document.createElement("div");
+  ri.className = "legend-item";
+  ri.innerHTML = `
+    <span class="legend-color"
+      style="background:${RESULT_FILL}; opacity:${RESULT_FILL_OPACITY};"></span>
+    <span>Zona del resultado</span>`;
+  legend.appendChild(ri);
+
+  const uItem = document.createElement("div");
+  uItem.className = "legend-item";
+  uItem.innerHTML = `
+    <span class="legend-color"
+      style="background:#f8fafc; border:2px solid #334155;"></span>
+    <span>Conjunto universal U</span>`;
+  legend.appendChild(uItem);
+
+  state.sets.forEach((set, i) => {
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    const color = getSetColor(i);
+    item.innerHTML = `
+      <span class="legend-color" style="background:${color};"></span>
+      <span>${escapeHtml(set.name)}</span>`;
+    legend.appendChild(item);
+  });
+}
+
+/* =====================================================================
+   RESULTADO EN TEXTO
+   ===================================================================== */
+function renderResult(values, formula, error){
+  const list = $("#resultList");
+  list.innerHTML = "";
+  $("#resultCount").textContent =
+    `${values.length} ${values.length === 1 ? "elemento" : "elementos"}`;
+
+  if (!values.length){
+    const e = document.createElement("span");
+    e.className = "empty-result";
+    e.textContent = error || "El resultado está vacío.";
+    list.appendChild(e);
+  } else {
+    values.forEach(v => {
+      const chip = document.createElement("span");
+      chip.className = "result-item";
+      chip.textContent = v;
+      list.appendChild(chip);
+    });
+  }
+  $("#formula").textContent = `Expresión: ${formula || "—"}`;
+}
+
+/* =====================================================================
+   CÁLCULO PRINCIPAL
+   ===================================================================== */
+function calculate(){
+  syncInputsToState();
+
+  const universe = parseValues(universeInput.value);
+  state.universe = universe;
+
+  const ctx = {
+    universe,
+    sets: state.sets,
+    values: {}
+  };
+  state.sets.forEach(s => { ctx.values[s.id] = getSetValues(s); });
+
+  let formula = "";
+  let values = [];
+  let error = "";
+
+  const expr = expressionInput.value.trim();
+  if (!expr){
+    error = "Escribe una expresión, por ejemplo: A ∪ B";
+  } else {
+    try {
+      const tokens = tokenize(expr);
+      const tree = parse(tokens);
+      formula = prettyExpr(tree);
+      values = evalExpr(tree, ctx);
+      // Aseguramos que el resultado esté dentro de U si U está definido
+      if (universe.length){
+        values = values.filter(v => universe.includes(v));
+      }
+    } catch (e){
+      error = e.message || String(e);
+    }
+  }
+
+  const operation = { values, formula, error };
+
+  state.result = values;
+
+  $("#operationStatus").textContent = error ? "Error" : (formula || "Expresión");
+
+  renderDiagram(operation);
+  renderResult(values, formula, error);
+}
+
+/* =====================================================================
+   GESTIÓN DE CONJUNTOS
+   ===================================================================== */
+function addSet(name, values = ""){
+  const id = state.nextId++;
+  state.sets.push({ id, name: name || String.fromCharCode(64 + id), values });
+  renderSetInputs();
+  calculate();
+}
+function removeSet(id){
+  if (state.sets.length <= 2){ alert("Debes conservar al menos dos conjuntos."); return; }
+  state.sets = state.sets.filter(s => s.id !== Number(id));
+  renderSetInputs();
+  calculate();
+}
+
+/* =====================================================================
+   DESCARGAS
+   ===================================================================== */
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function buildSvgString(){
+  const clone = svg.cloneNode(true);
+  clone.setAttribute("xmlns", SVG_NS);
+  clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+  clone.setAttribute("width", "1800");
+  clone.setAttribute("height", "1200");
+  clone.setAttribute("viewBox", "0 0 900 600");
+  clone.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+  const style = document.createElementNS(SVG_NS, "style");
+  style.textContent = `
+    text { font-family: Arial, Helvetica, sans-serif; dominant-baseline: middle; }
+    svg { background: #ffffff; }
+  `;
+  clone.insertBefore(style, clone.firstChild);
+  return '<?xml version="1.0" encoding="UTF-8"?>\n' +
+         new XMLSerializer().serializeToString(clone);
+}
+
+function downloadSvg(){
+  downloadBlob(new Blob([buildSvgString()],
+    { type:"image/svg+xml;charset=utf-8" }), "diagrama-venn.svg");
+}
+
+function downloadPng(){
+  const svgBlob = new Blob([buildSvgString()],
+    { type:"image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1800; canvas.height = 1200;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(pngBlob => {
+      if (pngBlob) downloadBlob(pngBlob, "diagrama-venn.png");
+      else alert("No se pudo generar el PNG.");
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); alert("No se pudo exportar."); };
+  img.src = url;
+}
+
+function downloadJson(){
+  syncInputsToState();
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    expression: expressionInput.value,
+    formula: $("#formula").textContent,
+    universe: parseValues(universeInput.value),
+    sets: state.sets.map(s => ({ name:s.name, elements:getSetValues(s) })),
+    result: state.result
+  };
+  downloadBlob(new Blob([JSON.stringify(payload, null, 2)],
+    { type:"application/json;charset=utf-8" }), "datos-diagrama-venn.json");
+}
+
+async function copyResult(){
+  const text = state.result.join(", ");
+  try {
+    await navigator.clipboard.writeText(text);
+    $("#copyResultBtn").textContent = "¡Copiado!";
+    setTimeout(() => $("#copyResultBtn").textContent = "Copiar resultado", 1500);
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+    alert("Resultado copiado.");
+  }
+}
+
+/* =====================================================================
+   EJEMPLO / RESET
+   ===================================================================== */
+function loadExample(){
+  state.sets = []; state.nextId = 1;
+  state.sets.push(
+    { id: state.nextId++, name:"A", values:"1, 2, 3, 4, 5, 6" },
+    { id: state.nextId++, name:"B", values:"4, 5, 6, 7, 8, 9" },
+    { id: state.nextId++, name:"C", values:"6, 7, 8, 10, 11, 12" }
+  );
+  universeInput.value = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15";
+  expressionInput.value = "(A ∪ B) ∩ C";
+  renderSetInputs();
+  calculate();
+}
+
+function resetPage(){
+  state.sets = []; state.nextId = 1; state.result = []; state.universe = [];
+  state.sets.push(
+    { id: state.nextId++, name:"A", values:"" },
+    { id: state.nextId++, name:"B", values:"" }
+  );
+  universeInput.value = "";
+  expressionInput.value = "A ∪ B";
+  renderSetInputs();
+  calculate();
+}
+
+/* =====================================================================
+   EVENTOS
+   ===================================================================== */
+$("#addSetBtn").addEventListener("click", () => {
+  syncInputsToState();
+  const nextLetter = String.fromCharCode(65 + (state.sets.length % 26));
+  addSet(nextLetter);
+});
+
+setsContainer.addEventListener("click", e => {
+  const b = e.target.closest("[data-remove]"); if (!b) return;
+  syncInputsToState(); removeSet(b.dataset.remove);
+});
+
+setsContainer.addEventListener("input", e => {
+  if (e.target.matches("[data-name]") || e.target.matches("[data-values]")){
+    syncInputsToState();
+    calculate();
+  }
+});
+
+universeInput.addEventListener("input", calculate);
+expressionInput.addEventListener("input", calculate);
+
+$("#calculateBtn").addEventListener("click", calculate);
+$("#exampleBtn").addEventListener("click", loadExample);
+$("#resetBtn").addEventListener("click", resetPage);
+$("#downloadPngBtn").addEventListener("click", downloadPng);
+$("#downloadSvgBtn").addEventListener("click", downloadSvg);
+$("#downloadJsonBtn").addEventListener("click", downloadJson);
+$("#copyResultBtn").addEventListener("click", copyResult);
+
+/* =====================================================================
+   INICIO
+   ===================================================================== */
+resetPage();
+</script>
+</body>
+</html>
