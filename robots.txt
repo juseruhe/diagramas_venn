@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /preview.png
+
+Sitemap: https://diagramasvenn.live/sitemap.xml
