@@ -40,6 +40,10 @@
 <meta name="twitter:image" content="https://diagramasvenn.live/preview.png">
 <meta name="twitter:image:alt" content="Diagrama de Venn interactivo con conjuntos A, B y C">
 
+<!-- ==================== GOOGLE ADSENSE ==================== -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7232167696395697"
+        crossorigin="anonymous"></script>
+
 <!-- ==================== DATOS ESTRUCTURADOS JSON-LD ==================== -->
 <script type="application/ld+json">
 {
@@ -157,6 +161,8 @@
 <!-- ==================== PRECONEXIONES ==================== -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://pagead2.googlesyndication.com">
+<link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
 
 <style>
   :root{
@@ -218,8 +224,43 @@
   .expr-help{background:#eef2ff;border-radius:8px;padding:10px 12px;font-size:12px;color:#3730a3;line-height:1.7;margin-top:8px;}
   .expr-help code{background:#fff;padding:1px 5px;border-radius:4px;border:1px solid #c7d2fe;}
   footer{padding:24px 15px;color:var(--muted);text-align:center;font-size:13px;}
-  @media (max-width:900px){.layout{grid-template-columns:1fr;}.visual-panel{min-height:0;}}
-  @media (max-width:520px){main{padding:12px;}.panel{padding:14px;}#vennSvg{min-height:260px;}.buttons button{flex:1 1 100%;}}
+
+  /* ==================== ADSENSE ==================== */
+  .ad-slot{
+    margin-top:18px;
+    padding:10px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:#fff;
+    min-height:120px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  }
+  .ad-slot .ad-label{
+    display:block;
+    width:100%;
+    margin-bottom:6px;
+    color:var(--muted);
+    font-size:10px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    text-align:center;
+  }
+  .ad-slot ins{display:block;width:100%;}
+
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .visual-panel{min-height:0;}
+  }
+  @media (max-width:520px){
+    main{padding:12px;}
+    .panel{padding:14px;}
+    #vennSvg{min-height:260px;}
+    .buttons button{flex:1 1 100%;}
+  }
 </style>
 </head>
 <body>
@@ -232,50 +273,67 @@
 <main>
   <div class="layout">
 
-    <section class="panel">
-      <h2>Configuración</h2>
+    <!-- ==================== COLUMNA IZQUIERDA ==================== -->
+    <div>
+      <section class="panel">
+        <h2>Configuración</h2>
 
-      <div class="field">
-        <label for="expressionInput">Expresión de conjuntos</label>
-        <input id="expressionInput" type="text"
-               placeholder="Ej: (A ∪ B) ∩ C"
-               autocomplete="off"
-               aria-label="Expresión de conjuntos">
-        <div class="expr-help">
-          Operadores: <code>∪</code> unión, <code>∩</code> intersección,
-          <code>−</code> diferencia, <code>ᶜ</code> complemento (o <code>'</code>).<br>
-          También puedes escribir: <code>+</code> = unión, <code>*</code> = intersección,
-          <code>-</code> = diferencia, <code>!</code> = complemento.<br>
-          Ejemplos: <code>(A ∪ B) ∩ C</code> · <code>A − (B ∪ C)</code> · <code>Aᶜ ∩ B</code> ·
-          <code>(A ∩ B) ∪ (C − D)</code>
+        <div class="field">
+          <label for="expressionInput">Expresión de conjuntos</label>
+          <input id="expressionInput" type="text"
+                 placeholder="Ej: (A ∪ B) ∩ C"
+                 autocomplete="off"
+                 aria-label="Expresión de conjuntos">
+          <div class="expr-help">
+            Operadores: <code>∪</code> unión, <code>∩</code> intersección,
+            <code>−</code> diferencia, <code>ᶜ</code> complemento (o <code>'</code>).<br>
+            También puedes escribir: <code>+</code> = unión, <code>*</code> = intersección,
+            <code>-</code> = diferencia, <code>!</code> = complemento.<br>
+            Ejemplos: <code>(A ∪ B) ∩ C</code> · <code>A − (B ∪ C)</code> · <code>Aᶜ ∩ B</code> ·
+            <code>(A ∩ B) ∪ (C − D)</code>
+          </div>
         </div>
+
+        <h3>Conjuntos</h3>
+        <div id="setsContainer"></div>
+
+        <button id="addSetBtn" class="btn-secondary btn-full" type="button">+ Agregar conjunto</button>
+
+        <div class="field" style="margin-top:22px;">
+          <label for="universeInput">Conjunto universal U</label>
+          <textarea id="universeInput" placeholder="Ejemplo: 1, 2, 3, 4, 5, 6, 7, 8"
+                    aria-label="Conjunto universal"></textarea>
+          <span class="help">Escribe todos los elementos del universo separados por comas.</span>
+        </div>
+
+        <div class="buttons">
+          <button id="calculateBtn" class="btn-primary" type="button">Calcular</button>
+          <button id="exampleBtn" class="btn-light" type="button">Cargar ejemplo</button>
+          <button id="resetBtn" class="btn-danger" type="button">Reiniciar</button>
+        </div>
+
+        <div class="notice">
+          La <strong>zona verde</strong> representa el resultado de la expresión.
+          Los elementos se colocan en su región correcta según pertenezcan a
+          cada conjunto.
+        </div>
+      </section>
+
+      <!-- ===== ANUNCIO: columna lateral (debajo del panel de configuración) ===== -->
+      <div class="ad-slot" aria-label="Publicidad">
+        <span class="ad-label">Publicidad</span>
+        <!-- Anuncio lateral · Reemplaza data-ad-slot por el ID de tu bloque -->
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-7232167696395697"
+             data-ad-slot="1234567890"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
       </div>
+    </div>
 
-      <h3>Conjuntos</h3>
-      <div id="setsContainer"></div>
-
-      <button id="addSetBtn" class="btn-secondary btn-full" type="button">+ Agregar conjunto</button>
-
-      <div class="field" style="margin-top:22px;">
-        <label for="universeInput">Conjunto universal U</label>
-        <textarea id="universeInput" placeholder="Ejemplo: 1, 2, 3, 4, 5, 6, 7, 8"
-                  aria-label="Conjunto universal"></textarea>
-        <span class="help">Escribe todos los elementos del universo separados por comas.</span>
-      </div>
-
-      <div class="buttons">
-        <button id="calculateBtn" class="btn-primary" type="button">Calcular</button>
-        <button id="exampleBtn" class="btn-light" type="button">Cargar ejemplo</button>
-        <button id="resetBtn" class="btn-danger" type="button">Reiniciar</button>
-      </div>
-
-      <div class="notice">
-        La <strong>zona verde</strong> representa el resultado de la expresión.
-        Los elementos se colocan en su región correcta según pertenezcan a
-        cada conjunto.
-      </div>
-    </section>
-
+    <!-- ==================== COLUMNA DERECHA ==================== -->
     <section class="panel visual-panel">
       <div class="visual-header">
         <h2>Diagrama y resultado</h2>
@@ -294,6 +352,19 @@
         <button id="downloadSvgBtn" class="btn-secondary" type="button">Descargar SVG</button>
         <button id="downloadJsonBtn" class="btn-light" type="button">Descargar datos JSON</button>
         <button id="copyResultBtn" class="btn-light" type="button">Copiar resultado</button>
+      </div>
+
+      <!-- ===== ANUNCIO: horizontal (debajo del diagrama, antes del resultado) ===== -->
+      <div class="ad-slot" aria-label="Publicidad">
+        <span class="ad-label">Publicidad</span>
+        <!-- Anuncio horizontal · Reemplaza data-ad-slot por el ID de tu bloque -->
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-7232167696395697"
+             data-ad-slot="0987654321"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
       </div>
 
       <div class="result-box">
